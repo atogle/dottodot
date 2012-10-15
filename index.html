@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Bootstrap, from Twitter</title>
+    <title>dottodot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -19,6 +19,8 @@
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <link rel="stylesheet" href="style.css" />
+
     <!-- Le fav and touch icons -->
     <link rel="shortcut icon" href="bootstrap-2.1.1/ico/favicon.ico">
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="bootstrap-2.1.1/ico/apple-touch-icon-114-precomposed.png">
@@ -30,19 +32,7 @@
     <div class="navbar">
       <div class="navbar-inner">
         <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="#">Map Template</a>
-          <div class="nav-collapse">
-            <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
-              <li><a href="#about">About</a></li>
-              <li><a href="#contact">Contact</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
+          <a class="brand" href="#">dottodot</a>
         </div>
       </div>
     </div>
@@ -50,10 +40,14 @@
     <div class="fullscreen">
       <div class="container-fluid">
         <div class="row-fluid">
-          <div class="span9">
+          <div class="span12">
             <div id="map"></div>
+
+            <div id="trace-btns" class="">
+              <button id="trace-btn" class="btn btn-large btn-success">Start</button>
+              <button id="station-btn" class="btn btn-large btn-primary">Mark Station</button>
+            </div>
           </div>
-          <div class="span3 hidden-phone">Sidebar</div>
         </div>
       </div>
     </div>
@@ -64,13 +58,116 @@
     <script src="bootstrap-2.1.1/js/bootstrap.js"></script>
     <script src="leaflet-0.4.4/leaflet.js"></script>
     <script>
-      var map = new L.Map('map');
+      var map = L.map('map', {
+        maxZoom:17
+      });
 
-      var cloudmadeUrl = 'http://{s}.tile.cloudmade.com/BC9A493B41014CAABB98F0471D759707/997/256/{z}/{x}/{y}.png',
-        cloudmadeAttribution = 'Map data &copy; 2011 OpenStreetMap contributors, Imagery &copy; 2011 CloudMade',
-        cloudmade = new L.TileLayer(cloudmadeUrl, {maxZoom: 18, attribution: cloudmadeAttribution});
+      var url = 'http://{s}.tiles.mapbox.com/v3/examples.map-a1dcgmtr/{z}/{x}/{y}.png',
+        attribution = '<a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>',
+        base = L.tileLayer(url, {maxZoom: 18, attribution: attribution});
 
-      map.setView(new L.LatLng(51.505, -0.09), 13).addLayer(cloudmade);
+      map.setView(new L.LatLng(39.9524, -75.1639), 13).addLayer(base);
+
+      var here,
+          hereLayer,
+          traceGroup = L.layerGroup(),
+          stationGroup = L.layerGroup(),
+          started = false,
+          stations = [],
+          trace = [];
+
+      map.addLayer(traceGroup);
+      map.addLayer(stationGroup);
+
+      var markStation = function() {
+        stations.push(here);
+        stationGroup.addLayer(L.circleMarker(here.latlng, {
+          radius: 8,
+          color: '#800000'
+        }));
+      };
+
+      var updateTrace = function() {
+        trace.push(here);
+
+        traceGroup.addLayer(L.circleMarker(here.latlng, {
+          radius: here.accuracy,
+          color: '#008040'
+        }));
+
+        console.log(here);
+      };
+
+      var onLocate = function(data) {
+        here = data;
+        if (hereLayer) {
+          hereLayer.setLatLng(here.latlng);
+          hereLayer.setRadius(here.accuracy);
+        } else {
+          hereLayer = L.circleMarker(here.latlng, {radius: here.accuracy});
+          map.addLayer(hereLayer);
+        }
+
+        if (started) {
+          updateTrace();
+        }
+      };
+
+      var start = function() {
+        console.log('start');
+        stations = [];
+        trace = [];
+        started = true;
+        traceGroup.clearLayers();
+        stationGroup.clearLayers();
+
+        map.locate({
+          watch: true,
+          enableHighAccuracy: true,
+          setView: true
+        });
+      };
+
+      var stop = function() {
+        console.log('stop');
+        started = false;
+        map.stopLocate();
+      };
+
+      if (navigator.geolocation) {
+        map.locate({
+          setView: true
+        });
+
+        map.on('locationfound', function(evt) {
+          onLocate(evt);
+        });
+
+        map.on('locationerror', function(evt) {
+          alert(evt.message);
+        });
+
+        $('#trace-btn').toggle(function(){
+          start();
+
+          $(this)
+            .text('Stop')
+            .toggleClass('btn-success')
+            .toggleClass('btn-danger');
+        }, function(){
+          stop();
+
+          $(this)
+            .text('Start')
+            .toggleClass('btn-success')
+            .toggleClass('btn-danger');
+        });
+
+        $('#station-btn').click(markStation);
+
+      } else {
+        alert('Sorry, your browser does not support geolocation.');
+      }
     </script>
 
   </body>

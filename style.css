@@ -1,0 +1,17 @@
+#trace-btns .btn {
+  font-weight:bold;
+  position: absolute;
+  bottom:45px;
+}
+
+#trace-btn {
+  left:20px;
+  right:50%;
+  margin-right:10px;
+}
+
+#station-btn {
+  left: 50%;
+  right:20px;
+  margin-left:10px;
+}
