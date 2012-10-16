@@ -88,14 +88,14 @@
       };
 
       var updateTrace = function() {
-        if (here.accuracy >= 50) {
+        if (here.accuracy <= 50) {
         trace.push(here);
 
         traceGroup.addLayer(L.circleMarker(here.latlng, {
           radius: here.accuracy,
           color: '#008040',
-          opacity: 0.1,
-          fillOpacity: 0.05
+          opacity: 0.2,
+          fillOpacity: 0.1
         }));
 
         console.log(here);
